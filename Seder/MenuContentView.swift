@@ -8,33 +8,51 @@ struct MenuContentView: View {
     var body: some View {
         Text(statusText)
 
+        if !appState.lastMessage.isEmpty {
+            Text(appState.lastMessage)
+        }
+
         Divider()
 
-        Button("Sort Downloads Now") { }
-            .keyboardShortcut("s", modifiers: [.command, .shift])
-            .disabled(true) // step 5
+        Button("Sort Downloads Now") {
+            appState.sortNow()
+        }
+        .keyboardShortcut("s", modifiers: [.command, .shift])
+
+        Toggle("Auto-Sort New Downloads", isOn: Binding(
+            get: { appState.isWatching },
+            set: { isOn in
+                if isOn {
+                    appState.startWatching()
+                } else {
+                    appState.stopWatching()
+                }
+            }
+        ))
+
+        Button("Undo Last Sort") {
+            appState.undoLastSort()
+        }
+        .keyboardShortcut("z", modifiers: .command)
+        .disabled(!appState.canUndo)
+
+        Divider()
 
         Button("Clean Up Desktop") { }
             .keyboardShortcut("d", modifiers: [.command, .shift])
-            .disabled(true) // step 7
+            .disabled(true) // step 6
 
         Button("Focus Mode") { }
             .keyboardShortcut("f", modifiers: [.command, .shift])
-            .disabled(true) // step 8
+            .disabled(true) // step 7
 
         Toggle("Show Widget", isOn: $appState.showWidget)
 
-        Divider()
-
         Button("Unused Files…") { }
-            .disabled(true) // step 7
+            .disabled(true) // step 6
 
         Button("Dock Settings…") { }
-            .disabled(true) // step 8
-
-        Button("Undo Last Sort") { }
-            .keyboardShortcut("z", modifiers: .command)
-            .disabled(!appState.canUndo)
+            .disabled(true) // step 7
 
         Divider()
 
@@ -53,6 +71,6 @@ struct MenuContentView: View {
     private var statusText: String {
         appState.isWatching
             ? "Watching Downloads · \(appState.sortedCount) files sorted"
-            : "Not watching Downloads"
+            : "Not watching Downloads · \(appState.sortedCount) files sorted"
     }
 }
