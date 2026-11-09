@@ -22,6 +22,7 @@ struct SederApp: App {
         Settings {
             SettingsView()
                 .environmentObject(appState)
+                .environmentObject(appState.focus)
         }
     }
 }
