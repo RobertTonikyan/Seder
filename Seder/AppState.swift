@@ -11,6 +11,8 @@ final class AppState: ObservableObject {
         didSet { UserDefaults.standard.set(sortedCount, forKey: "sortedCount") }
     }
 
+    // MARK: Widget settings
+
     @Published var showWidget: Bool {
         didSet {
             UserDefaults.standard.set(showWidget, forKey: "showWidget")
@@ -32,14 +34,35 @@ final class AppState: ObservableObject {
         }
     }
 
+    // MARK: Desktop & Dock settings
+
     @Published var hideDesktopIcons: Bool {
         didSet { FinderSettings.setDesktopIconsHidden(hideDesktopIcons) }
     }
 
+    @Published var dockOnlyOpenApps: Bool {
+        didSet { applyDock(DockSettings.onlyOpenApps, dockOnlyOpenApps) }
+    }
+
+    @Published var dockShowRecents: Bool {
+        didSet { applyDock(DockSettings.showRecents, dockShowRecents) }
+    }
+
+    @Published var dockAutoHide: Bool {
+        didSet { applyDock(DockSettings.autoHide, dockAutoHide) }
+    }
+
+    @Published private(set) var hasDockBackup: Bool
+
+    // MARK: Parts
+
     let sorter = DownloadsSorter()
     let desktopSorter = DownloadsSorter(folder: URL.desktopDirectory)
     let widget = WidgetController()
+    let focus = FocusManager()
+
     private var watcher: DownloadsWatcher?
+    private var isSyncingDock = false
     private var lastMoves: [FileMove] = [] {
         didSet { canUndo = !lastMoves.isEmpty }
     }
@@ -51,6 +74,11 @@ final class AppState: ObservableObject {
         widgetOnTop = defaults.bool(forKey: "widgetOnTop")
         widgetSize = WidgetSize(rawValue: defaults.string(forKey: "widgetSize") ?? "") ?? .medium
         hideDesktopIcons = FinderSettings.areDesktopIconsHidden
+
+        dockOnlyOpenApps = DockSettings.bool(DockSettings.onlyOpenApps, default: false)
+        dockShowRecents = DockSettings.bool(DockSettings.showRecents, default: true)
+        dockAutoHide = DockSettings.bool(DockSettings.autoHide, default: false)
+        hasDockBackup = DockSettings.hasBackup
 
         widget.isOnTop = widgetOnTop
         widget.size = widgetSize
@@ -75,7 +103,7 @@ final class AppState: ObservableObject {
         isWatching = false
     }
 
-    // MARK: - Actions
+    // MARK: - Sorting
 
     /// Sorts everything currently in Downloads (old files too).
     func sortNow() {
@@ -100,6 +128,28 @@ final class AppState: ObservableObject {
         if isWatching {
             watcher?.start()
         }
+    }
+
+    // MARK: - Dock
+
+    /// Puts the Dock back the way it was before Seder changed it.
+    func restoreDock() {
+        DockSettings.restoreOriginal()
+
+        // Update the switches without writing the settings again.
+        isSyncingDock = true
+        dockOnlyOpenApps = DockSettings.bool(DockSettings.onlyOpenApps, default: false)
+        dockShowRecents = DockSettings.bool(DockSettings.showRecents, default: true)
+        dockAutoHide = DockSettings.bool(DockSettings.autoHide, default: false)
+        isSyncingDock = false
+
+        hasDockBackup = false
+    }
+
+    private func applyDock(_ key: String, _ value: Bool) {
+        guard !isSyncingDock else { return }
+        DockSettings.set(key, value)
+        hasDockBackup = DockSettings.hasBackup
     }
 
     // MARK: - Widget

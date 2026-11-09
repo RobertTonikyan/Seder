@@ -8,6 +8,7 @@ struct SederApp: App {
         MenuBarExtra("Seder", systemImage: "square.stack.3d.up") {
             MenuContentView()
                 .environmentObject(appState)
+                .environmentObject(appState.focus)
         }
         .menuBarExtraStyle(.menu)
 

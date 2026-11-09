@@ -3,6 +3,7 @@ import AppKit
 
 struct MenuContentView: View {
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var focus: FocusManager
     @Environment(\.openSettings) private var openSettings
     @Environment(\.openWindow) private var openWindow
 
@@ -14,6 +15,8 @@ struct MenuContentView: View {
         }
 
         Divider()
+
+        // MARK: Downloads
 
         Button("Sort Downloads Now") {
             appState.sortNow()
@@ -39,6 +42,8 @@ struct MenuContentView: View {
 
         Divider()
 
+        // MARK: Desktop
+
         Button("Clean Up Desktop") {
             appState.cleanUpDesktop()
         }
@@ -53,6 +58,48 @@ struct MenuContentView: View {
 
         Divider()
 
+        // MARK: Focus
+
+        Button("Focus Mode") {
+            focus.focus()
+        }
+        .keyboardShortcut("f", modifiers: [.command, .shift])
+
+        Button("Show All Apps") {
+            focus.showAll()
+        }
+
+        Menu("Idle Apps (\(focus.idleApps.count))") {
+            if focus.idleApps.isEmpty {
+                Text("No idle apps")
+            }
+
+            ForEach(focus.idleApps) { idle in
+                Button("Quit \(idle.name) · idle \(idle.idleMinutes) min") {
+                    focus.quit(idle)
+                }
+            }
+
+            Divider()
+
+            Button("Quit All Idle Apps") {
+                focus.quitAllIdle()
+            }
+            .disabled(focus.idleApps.isEmpty)
+
+            Picker("Idle After", selection: $focus.idleAfterMinutes) {
+                Text("1 minute").tag(1)
+                Text("15 minutes").tag(15)
+                Text("30 minutes").tag(30)
+                Text("1 hour").tag(60)
+                Text("2 hours").tag(120)
+            }
+        }
+
+        Divider()
+
+        // MARK: Widget
+
         Toggle("Show Widget", isOn: $appState.showWidget)
 
         Toggle("Keep Widget on Top", isOn: $appState.widgetOnTop)
@@ -65,14 +112,20 @@ struct MenuContentView: View {
         }
         .disabled(!appState.showWidget)
 
-        Divider()
+        // MARK: Dock
 
-        Button("Focus Mode") { }
-            .keyboardShortcut("f", modifiers: [.command, .shift])
-            .disabled(true) // step 7
+        Menu("Dock") {
+            Toggle("Show Only Open Apps", isOn: $appState.dockOnlyOpenApps)
+            Toggle("Show Recent Apps", isOn: $appState.dockShowRecents)
+            Toggle("Auto-Hide Dock", isOn: $appState.dockAutoHide)
 
-        Button("Dock Settings…") { }
-            .disabled(true) // step 7
+            Divider()
+
+            Button("Restore Original Dock") {
+                appState.restoreDock()
+            }
+            .disabled(!appState.hasDockBackup)
+        }
 
         Divider()
 
