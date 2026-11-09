@@ -1,17 +1,19 @@
-//
-//  SederApp.swift
-//  Seder
-//
-//  Created by Robert Tonikyan on 09/11/2026.
-//
-
 import SwiftUI
 
 @main
 struct SederApp: App {
+    @StateObject private var appState = AppState()
+
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        MenuBarExtra("Seder", systemImage: "square.stack.3d.up") {
+            MenuContentView()
+                .environmentObject(appState)
+        }
+        .menuBarExtraStyle(.menu)
+
+        Settings {
+            SettingsView()
+                .environmentObject(appState)
         }
     }
 }
