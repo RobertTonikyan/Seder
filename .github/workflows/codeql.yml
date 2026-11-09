@@ -20,13 +20,20 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: swift
           build-mode: manual
+
+      - name: Make project readable by the runner's Xcode
+        # Project was saved by Xcode 27 (format 110); the runner has Xcode 26.
+        # This only changes the copy on the CI machine, not the repo.
+        run: |
+          sed -i '' 's/objectVersion = 110;/objectVersion = 77;/' Seder.xcodeproj/project.pbxproj
+          grep objectVersion Seder.xcodeproj/project.pbxproj
 
       - name: Build
         run: |
