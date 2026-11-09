@@ -4,6 +4,7 @@ import AppKit
 struct MenuContentView: View {
     @EnvironmentObject private var appState: AppState
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         Text(statusText)
@@ -38,6 +39,20 @@ struct MenuContentView: View {
 
         Divider()
 
+        Button("Clean Up Desktop") {
+            appState.cleanUpDesktop()
+        }
+        .keyboardShortcut("d", modifiers: [.command, .shift])
+
+        Toggle("Hide Desktop Icons", isOn: $appState.hideDesktopIcons)
+
+        Button("Unused Files…") {
+            openWindow(id: "unused-files")
+            NSApp.activate()
+        }
+
+        Divider()
+
         Toggle("Show Widget", isOn: $appState.showWidget)
 
         Toggle("Keep Widget on Top", isOn: $appState.widgetOnTop)
@@ -51,13 +66,6 @@ struct MenuContentView: View {
         .disabled(!appState.showWidget)
 
         Divider()
-
-        Button("Clean Up Desktop") { }
-            .keyboardShortcut("d", modifiers: [.command, .shift])
-            .disabled(true) // step 6
-
-        Button("Unused Files…") { }
-            .disabled(true) // step 6
 
         Button("Focus Mode") { }
             .keyboardShortcut("f", modifiers: [.command, .shift])

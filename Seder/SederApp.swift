@@ -11,6 +11,13 @@ struct SederApp: App {
         }
         .menuBarExtraStyle(.menu)
 
+        Window("Unused Files", id: "unused-files") {
+            UnusedFilesView()
+        }
+        .defaultSize(width: 760, height: 480)
+        .defaultLaunchBehavior(.suppressed)
+        .restorationBehavior(.disabled)
+
         Settings {
             SettingsView()
                 .environmentObject(appState)

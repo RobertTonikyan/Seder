@@ -32,7 +32,12 @@ final class AppState: ObservableObject {
         }
     }
 
+    @Published var hideDesktopIcons: Bool {
+        didSet { FinderSettings.setDesktopIconsHidden(hideDesktopIcons) }
+    }
+
     let sorter = DownloadsSorter()
+    let desktopSorter = DownloadsSorter(folder: URL.desktopDirectory)
     let widget = WidgetController()
     private var watcher: DownloadsWatcher?
     private var lastMoves: [FileMove] = [] {
@@ -45,6 +50,7 @@ final class AppState: ObservableObject {
         showWidget = defaults.object(forKey: "showWidget") as? Bool ?? true
         widgetOnTop = defaults.bool(forKey: "widgetOnTop")
         widgetSize = WidgetSize(rawValue: defaults.string(forKey: "widgetSize") ?? "") ?? .medium
+        hideDesktopIcons = FinderSettings.areDesktopIconsHidden
 
         widget.isOnTop = widgetOnTop
         widget.size = widgetSize
@@ -77,14 +83,20 @@ final class AppState: ObservableObject {
         didSort(moves)
     }
 
-    /// Moves the last sorted batch back to Downloads.
+    /// Sorts the files on the Desktop into category folders. Folders are left alone.
+    func cleanUpDesktop() {
+        let moves = desktopSorter.sort(desktopSorter.sortableFiles())
+        didSort(moves, place: "Desktop")
+    }
+
+    /// Moves the last sorted batch back to where it was (Downloads or Desktop).
     func undoLastSort() {
         let restored = sorter.undo(lastMoves)
         sortedCount = max(0, sortedCount - restored)
         lastMoves = []
         lastMessage = "Restored \(restored) file(s)"
 
-        // Re-snapshot so the restored files are not sorted again right away.
+        // Re-snapshot so restored Downloads files are not sorted again right away.
         if isWatching {
             watcher?.start()
         }
@@ -102,9 +114,9 @@ final class AppState: ObservableObject {
 
     // MARK: - Private
 
-    private func didSort(_ moves: [FileMove]) {
+    private func didSort(_ moves: [FileMove], place: String = "Downloads") {
         guard !moves.isEmpty else {
-            lastMessage = "Nothing to sort"
+            lastMessage = "Nothing to sort on \(place)"
             return
         }
 
@@ -115,7 +127,7 @@ final class AppState: ObservableObject {
             let folderName = move.to.deletingLastPathComponent().lastPathComponent
             lastMessage = "\(move.to.lastPathComponent) → \(folderName)"
         } else {
-            lastMessage = "Sorted \(moves.count) files"
+            lastMessage = "Sorted \(moves.count) files on \(place)"
         }
     }
 }
