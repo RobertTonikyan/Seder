@@ -1,0 +1,47 @@
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: "30 3 * * 1"   # every Monday 03:30 UTC
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    name: Analyze (swift)
+    runs-on: macos-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: swift
+          build-mode: manual
+
+      - name: Build
+        run: |
+          xcodebuild -version
+          xcodebuild -list -project Seder.xcodeproj
+          xcodebuild build \
+            -project Seder.xcodeproj \
+            -scheme Seder \
+            -configuration Debug \
+            -destination 'platform=macOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:swift"
