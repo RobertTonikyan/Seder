@@ -4,21 +4,51 @@ import Combine
 @MainActor
 final class AppState: ObservableObject {
     @Published var isWatching = false
-    @Published var showWidget = true
     @Published var lastMessage = ""
     @Published private(set) var canUndo = false
+
     @Published var sortedCount: Int {
         didSet { UserDefaults.standard.set(sortedCount, forKey: "sortedCount") }
     }
 
+    @Published var showWidget: Bool {
+        didSet {
+            UserDefaults.standard.set(showWidget, forKey: "showWidget")
+            updateWidget()
+        }
+    }
+
+    @Published var widgetOnTop: Bool {
+        didSet {
+            UserDefaults.standard.set(widgetOnTop, forKey: "widgetOnTop")
+            widget.isOnTop = widgetOnTop
+        }
+    }
+
+    @Published var widgetSize: WidgetSize {
+        didSet {
+            UserDefaults.standard.set(widgetSize.rawValue, forKey: "widgetSize")
+            widget.size = widgetSize
+        }
+    }
+
     let sorter = DownloadsSorter()
+    let widget = WidgetController()
     private var watcher: DownloadsWatcher?
     private var lastMoves: [FileMove] = [] {
         didSet { canUndo = !lastMoves.isEmpty }
     }
 
     init() {
-        sortedCount = UserDefaults.standard.integer(forKey: "sortedCount")
+        let defaults = UserDefaults.standard
+        sortedCount = defaults.integer(forKey: "sortedCount")
+        showWidget = defaults.object(forKey: "showWidget") as? Bool ?? true
+        widgetOnTop = defaults.bool(forKey: "widgetOnTop")
+        widgetSize = WidgetSize(rawValue: defaults.string(forKey: "widgetSize") ?? "") ?? .medium
+
+        widget.isOnTop = widgetOnTop
+        widget.size = widgetSize
+        updateWidget()
         startWatching()
     }
 
@@ -57,6 +87,16 @@ final class AppState: ObservableObject {
         // Re-snapshot so the restored files are not sorted again right away.
         if isWatching {
             watcher?.start()
+        }
+    }
+
+    // MARK: - Widget
+
+    private func updateWidget() {
+        if showWidget {
+            widget.show()
+        } else {
+            widget.hide()
         }
     }
 

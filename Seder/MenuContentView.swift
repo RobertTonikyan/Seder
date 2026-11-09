@@ -38,18 +38,30 @@ struct MenuContentView: View {
 
         Divider()
 
+        Toggle("Show Widget", isOn: $appState.showWidget)
+
+        Toggle("Keep Widget on Top", isOn: $appState.widgetOnTop)
+            .disabled(!appState.showWidget)
+
+        Picker("Widget Size", selection: $appState.widgetSize) {
+            ForEach(WidgetSize.allCases) { size in
+                Text(size.title).tag(size)
+            }
+        }
+        .disabled(!appState.showWidget)
+
+        Divider()
+
         Button("Clean Up Desktop") { }
             .keyboardShortcut("d", modifiers: [.command, .shift])
+            .disabled(true) // step 6
+
+        Button("Unused Files…") { }
             .disabled(true) // step 6
 
         Button("Focus Mode") { }
             .keyboardShortcut("f", modifiers: [.command, .shift])
             .disabled(true) // step 7
-
-        Toggle("Show Widget", isOn: $appState.showWidget)
-
-        Button("Unused Files…") { }
-            .disabled(true) // step 6
 
         Button("Dock Settings…") { }
             .disabled(true) // step 7
